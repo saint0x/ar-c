@@ -1,4 +1,5 @@
 pub mod typescript;
+pub mod schema;
 
 use anyhow::Result;
 use std::path::{Path, PathBuf};

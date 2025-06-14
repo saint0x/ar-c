@@ -1,21 +1,17 @@
-use std::{
-    io::{self, Write},
-    path::Path,
-    process::{Command, Stdio},
-    sync::Arc,
-};
+pub mod visitor;
 
+use std::sync::Arc;
 use anyhow::{anyhow, Result};
-use swc_core::{
-    common::SourceMap,
-    ecma::{
-        ast::*,
-        parser::{lexer::Lexer, Parser, StringInput, Syntax, TsConfig},
-    },
-};
+use std::path::Path;
+use std::process::{Command, Stdio};
+use std::io::{self, Write};
+use swc_core::common::{SourceMap, FileName};
+use swc_core::ecma::ast::{Module, EsVersion};
+use swc_core::ecma::parser::{lexer::Lexer, Parser, StringInput, Syntax, TsConfig};
 
-use crate::compiler::{SourceFile, Implementation, ImplementationType, DecoratorMetadata, SourceLanguage};
-use std::collections::HashMap;
+use crate::compiler::SourceFile;
+use crate::compiler::Implementation;
+use self::visitor::AstVisitor;
 
 /// TypeScript compiler using SWC for AST parsing
 pub struct TypeScriptCompiler {
@@ -30,165 +26,19 @@ impl TypeScriptCompiler {
     
     /// Compile a single TypeScript file
     pub async fn compile_file(&self, source: &SourceFile) -> Result<Vec<Implementation>> {
-        // TODO: Replace with actual SWC parsing
-        // For now, return placeholder implementation
-        
-        println!("    Parsing: {}", source.path.display());
-        
-        // Simulate finding decorated functions/classes
-        let implementations = self.extract_mock_implementations(source)?;
-        
-        if implementations.is_empty() {
-            println!("    No decorated functions found in {}", source.path.display());
-        } else {
-            println!("    Found {} decorated items in {}", 
-                implementations.len(), 
-                source.path.display()
-            );
-        }
-        
-        Ok(implementations)
-    }
-    
-    /// Extract mock implementations (placeholder for real SWC parsing)
-    fn extract_mock_implementations(&self, source: &SourceFile) -> Result<Vec<Implementation>> {
-        let mut implementations = Vec::new();
-        
-        // Simple regex-based detection for now (will be replaced with SWC AST parsing)
-        if source.content.contains("@tool") {
-            // Found a @tool decorator
-            let tool_impl = Implementation {
-                name: self.extract_function_name(&source.content, "@tool")
-                    .unwrap_or_else(|| "unknownTool".to_string()),
-                impl_type: ImplementationType::Function,
-                source_language: SourceLanguage::TypeScript,
-                source_code: self.extract_function_source(&source.content, "@tool")?,
-                executable_code: self.compile_to_javascript(&source.content)?,
-                dependencies: vec![], // TODO: Extract dependencies
-                decorators: vec![DecoratorMetadata {
-                    decorator_type: "tool".to_string(),
-                    properties: HashMap::new(), // TODO: Parse decorator properties
-                }],
-            };
-            implementations.push(tool_impl);
-        }
-        
-        if source.content.contains("@agent") {
-            // Found an @agent decorator
-            let agent_impl = Implementation {
-                name: self.extract_class_name(&source.content, "@agent")
-                    .unwrap_or_else(|| "UnknownAgent".to_string()),
-                impl_type: ImplementationType::Class,
-                source_language: SourceLanguage::TypeScript,
-                source_code: self.extract_class_source(&source.content, "@agent")?,
-                executable_code: self.compile_to_javascript(&source.content)?,
-                dependencies: vec![], // TODO: Extract dependencies
-                decorators: vec![DecoratorMetadata {
-                    decorator_type: "agent".to_string(),
-                    properties: HashMap::new(), // TODO: Parse decorator properties
-                }],
-            };
-            implementations.push(agent_impl);
-        }
-        
-        if source.content.contains("@team") {
-            // Found a @team decorator
-            let team_impl = Implementation {
-                name: self.extract_class_name(&source.content, "@team")
-                    .unwrap_or_else(|| "UnknownTeam".to_string()),
-                impl_type: ImplementationType::Team,
-                source_language: SourceLanguage::TypeScript,
-                source_code: self.extract_class_source(&source.content, "@team")?,
-                executable_code: self.compile_to_javascript(&source.content)?,
-                dependencies: vec![], // TODO: Extract dependencies
-                decorators: vec![DecoratorMetadata {
-                    decorator_type: "team".to_string(),
-                    properties: HashMap::new(), // TODO: Parse decorator properties
-                }],
-            };
-            implementations.push(team_impl);
-        }
-        
-        Ok(implementations)
-    }
-    
-    /// Extract function name from source (placeholder)
-    fn extract_function_name(&self, content: &str, decorator: &str) -> Option<String> {
-        // Very basic regex extraction - will be replaced with proper AST parsing
-        let pattern = format!(r"{}.*?function\s+(\w+)", decorator);
-        if let Ok(re) = regex::Regex::new(&pattern) {
-            if let Some(captures) = re.captures(content) {
-                return captures.get(1).map(|m| m.as_str().to_string());
-            }
-        }
-        
-        // Also try arrow functions and exports
-        let export_pattern = format!(r"{}.*?export.*?(\w+)", decorator);
-        if let Ok(re) = regex::Regex::new(&export_pattern) {
-            if let Some(captures) = re.captures(content) {
-                return captures.get(1).map(|m| m.as_str().to_string());
-            }
-        }
-        
-        None
-    }
-    
-    /// Extract class name from source (placeholder)
-    fn extract_class_name(&self, content: &str, decorator: &str) -> Option<String> {
-        // Very basic regex extraction - will be replaced with proper AST parsing
-        let pattern = format!(r"{}.*?class\s+(\w+)", decorator);
-        if let Ok(re) = regex::Regex::new(&pattern) {
-            if let Some(captures) = re.captures(content) {
-                return captures.get(1).map(|m| m.as_str().to_string());
-            }
-        }
-        None
-    }
-    
-    /// Extract function source code (placeholder)
-    fn extract_function_source(&self, content: &str, _decorator: &str) -> Result<String> {
-        // TODO: Implement proper function extraction with SWC
-        // For now, return the entire file content as placeholder
-        Ok(content.to_string())
-    }
-    
-    /// Extract class source code (placeholder)
-    fn extract_class_source(&self, content: &str, _decorator: &str) -> Result<String> {
-        // TODO: Implement proper class extraction with SWC
-        // For now, return the entire file content as placeholder
-        Ok(content.to_string())
-    }
-    
-    /// Compile TypeScript to JavaScript (placeholder)
-    fn compile_to_javascript(&self, content: &str) -> Result<String> {
-        // TODO: Implement actual TypeScript to JavaScript compilation
-        // For now, just strip type annotations with basic regex
-        let js_content = self.strip_type_annotations(content);
-        Ok(js_content)
-    }
-    
-    /// Basic type annotation stripping (placeholder for real compilation)
-    fn strip_type_annotations(&self, content: &str) -> String {
-        // Very basic type stripping - will be replaced with proper SWC compilation
-        let mut result = content.to_string();
-        
-        // Remove simple type annotations (this is very naive)
-        if let Ok(re) = regex::Regex::new(r": \w+(\[\])?") {
-            result = re.replace_all(&result, "").to_string();
-        }
-        
-        // Remove interface definitions
-        if let Ok(re) = regex::Regex::new(r"interface \w+ \{[^}]*\}") {
-            result = re.replace_all(&result, "").to_string();
-        }
-        
-        result
+        let module = self.parse(&source.content)?;
+
+        let mut visitor = AstVisitor::new(&source.content);
+        visitor.visit_module(&module);
+
+        // For now, we return an empty Vec. We will populate this later.
+        Ok(Vec::new())
     }
 
     pub fn parse(&self, source: &str) -> Result<Module> {
         let source_file = self
             .source_map
-            .new_source_file(swc_core::common::FileName::Anon, source.into());
+            .new_source_file(FileName::Anon, source.into());
 
         let lexer = Lexer::new(
             Syntax::Typescript(TsConfig {

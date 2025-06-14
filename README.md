@@ -67,24 +67,6 @@ src/
 └── config/             # Configuration management
     └── mod.rs          # aria.toml parsing and templates
 ```
-
-## Current Implementation Status
-
-### ✅ Complete
-- **Project Scaffolding** (`arc new`): Full template generation for basic/sdk/advanced projects
-- **Bundle Upload** (`arc upload`): HTTP upload to runtime servers with auth
-- **Configuration System**: Complete aria.toml parsing and validation
-- **Bundle Format**: ZIP-based .aria bundle structure with manifest
-- **CLI Framework**: Professional command-line interface with proper error handling
-
-### 🚧 In Progress  
-- **TypeScript Compilation** (`arc build`): Currently placeholder implementation
-  - SWC integration for AST parsing
-  - Decorator extraction (@tool, @agent, @team)
-  - Implementation extraction with dependencies
-  - JavaScript code generation
-
-### 📋 Planned
 - **SWC Integration**: Replace regex-based parsing with proper AST
 - **Dependency Tracing**: Complete import resolution and bundling
 - **Watch Mode**: File watching for development workflow
@@ -155,47 +137,6 @@ myapp.aria
     └── build.json            # Build information
 ```
 
-## Phase 1 Roadmap
-
-Following the [development plan](PLAN.md), we're implementing Phase 1 in 7 milestones:
-
-1. **Foundation** ✅ - CLI and project structure
-2. **TypeScript Parsing** 🚧 - SWC integration for decorator detection  
-3. **Implementation Extraction** 📋 - Complete code extraction with dependencies
-4. **Bundle Generation** 📋 - Full .aria bundle creation
-5. **Development Experience** 📋 - Watch mode and error reporting
-6. **Runtime Integration** 📋 - Bundle loading and hot reload
-7. **Polish & Documentation** 📋 - Performance optimization and docs
-
-## Testing
-
-```bash
-# Run all tests
-cargo test
-
-# Test CLI commands
-cargo test --test integration
-
-# Test specific modules
-cargo test compiler::tests
-```
-
-### Manual Testing
-
-```bash
-# Test project creation
-./target/release/arc new test-project
-cd test-project
-ls -la  # Should show: src/, aria.toml, package.json, etc.
-
-# Test build (currently placeholder)
-./target/release/arc build ./src
-# Expected: Placeholder compilation with mock output
-
-# Test upload (requires server)
-./target/release/arc upload dist/bundle.aria --server https://example.com
-```
-
 ## Contributing
 
 ### Adding New Commands
@@ -245,7 +186,3 @@ MIT License - see [LICENSE](LICENSE) file.
 - **Development Plan**: [PLAN.md](PLAN.md) - Detailed implementation roadmap  
 - **Runtime Integration**: Compatible with Aria Runtime Server
 - **TypeScript SDK**: Uses `@aria/sdk` decorators
-
----
-
-**Next Steps**: Implement SWC integration for real TypeScript AST parsing in Milestone 2. 
