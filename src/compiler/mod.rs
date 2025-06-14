@@ -6,10 +6,10 @@ use std::path::{Path, PathBuf};
 use std::collections::HashMap;
 use serde::{Serialize, Deserialize};
 use std::sync::Arc;
-use swc_core::common::SourceMap;
-
+use swc_core::common::{SourceMap, sync::Lrc};
 
 use self::typescript::TypeScriptCompiler;
+use crate::compiler::schema::{AgentManifest, ToolManifest, AriaManifest};
 
 /// Main Aria compiler that orchestrates the compilation process
 pub struct AriaCompiler {
@@ -20,7 +20,7 @@ pub struct AriaCompiler {
 impl AriaCompiler {
     /// Create a new Aria compiler instance
     pub fn new() -> Self {
-        let cm = Arc::new(SourceMap::default());
+        let cm = Lrc::new(SourceMap::default());
         Self {
             typescript_compiler: Arc::new(TypeScriptCompiler::new(cm)),
         }
@@ -114,74 +114,26 @@ impl AriaCompiler {
     }
     
     /// Generate manifest from implementations
-    fn generate_manifest(&self, implementations: &[Implementation]) -> Result<crate::bundle::AriaManifest> {
+    fn generate_manifest(&self, implementations: &[Implementation]) -> Result<AriaManifest> {
         let mut tools = Vec::new();
         let mut agents = Vec::new();
-        let mut teams = Vec::new();
         
         for implementation in implementations {
-            match implementation.impl_type {
-                ImplementationType::Function => {
-                    if let Some(tool_manifest) = self.create_tool_manifest(implementation) {
-                        tools.push(tool_manifest);
-                    }
+            match &implementation.details {
+                ImplementationDetails::Tool(tool_manifest) => {
+                    tools.push(tool_manifest.clone());
                 }
-                ImplementationType::Class => {
-                    if let Some(agent_manifest) = self.create_agent_manifest(implementation) {
-                        agents.push(agent_manifest);
-                    }
-                }
-                ImplementationType::Team => {
-                    if let Some(team_manifest) = self.create_team_manifest(implementation) {
-                        teams.push(team_manifest);
-                    }
+                ImplementationDetails::Agent(agent_manifest) => {
+                    agents.push(agent_manifest.clone());
                 }
             }
         }
         
-        Ok(crate::bundle::AriaManifest {
+        Ok(AriaManifest {
             name: "Generated Bundle".to_string(), // TODO: Get from config
             version: "0.1.0".to_string(),
             tools,
             agents,
-            teams,
-            applications: vec![], // Future: DSL applications
-            runtime_requirements: crate::bundle::RuntimeRequirements {
-                bun_version: "latest".to_string(),
-                node_version: None,
-            },
-        })
-    }
-    
-    /// Create tool manifest from implementation
-    fn create_tool_manifest(&self, implementation: &Implementation) -> Option<crate::bundle::ToolManifest> {
-        // TODO: Extract from decorator metadata
-        Some(crate::bundle::ToolManifest {
-            name: implementation.name.clone(),
-            description: "Auto-generated tool".to_string(),
-            inputs: HashMap::new(),
-            outputs: HashMap::new(),
-        })
-    }
-    
-    /// Create agent manifest from implementation
-    fn create_agent_manifest(&self, implementation: &Implementation) -> Option<crate::bundle::AgentManifest> {
-        // TODO: Extract from decorator metadata
-        Some(crate::bundle::AgentManifest {
-            name: implementation.name.clone(),
-            description: "Auto-generated agent".to_string(),
-            capabilities: vec![],
-        })
-    }
-    
-    /// Create team manifest from implementation
-    fn create_team_manifest(&self, implementation: &Implementation) -> Option<crate::bundle::TeamManifest> {
-        // TODO: Extract from decorator metadata
-        Some(crate::bundle::TeamManifest {
-            name: implementation.name.clone(),
-            description: "Auto-generated team".to_string(),
-            agents: vec![],
-            workflow: "collaborative".to_string(),
         })
     }
 }
@@ -211,12 +163,16 @@ pub enum SourceLanguage {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Implementation {
     pub name: String,
-    pub impl_type: ImplementationType,
-    pub source_language: SourceLanguage,
+    pub details: ImplementationDetails,
     pub source_code: String,
     pub executable_code: String,
-    pub dependencies: Vec<String>,
-    pub decorators: Vec<DecoratorMetadata>,
+}
+
+/// Enum to hold manifest details for different implementation types.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum ImplementationDetails {
+    Tool(ToolManifest),
+    Agent(AgentManifest),
 }
 
 /// Type of implementation

@@ -14,14 +14,14 @@ Before the `arc` compiler begins its work, it should first invoke the standard T
 
 *Goal: Reliably parse a TypeScript source file into an in-memory Abstract Syntax Tree (AST).*
 
--   [ ] **Project & Dependency Setup**:
-    -   [ ] Update `Cargo.toml` in `src/compiler/` to add `swc_core`, `swc_ecma_parser`, `swc_ecma_visit`, and `serde`.
--   [ ] **Implement Core Parser**:
-    -   [ ] Create a `TypeScriptCompiler` module in `src/compiler/typescript/`.
-    -   [ ] Implement a function that uses `swc` to parse a TypeScript code string into an AST.
-    -   [ ] Configure the `swc` parser to correctly handle TypeScript syntax and decorators (`TsConfig { decorators: true }`).
--   [ ] **Initial Validation**:
-    -   [ ] Test the parser with examples from `docs/NEW-EXAMPLES.md` to ensure it produces an AST without errors.
+-   [✅] **Project & Dependency Setup**:
+    -   [✅] Update `Cargo.toml` to add `swc_core`, `serde`, and related dependencies.
+-   [✅] **Implement Core Parser**:
+    -   [✅] Create a `TypeScriptCompiler` module in `src/compiler/typescript/`.
+    -   [✅] Implement a function that uses `swc` to parse a TypeScript code string into an AST.
+    -   [✅] Configure the `swc` parser to correctly handle TypeScript syntax and decorators (`TsConfig { decorators: true }`).
+-   [✅] **Initial Validation**:
+    -   [✅] Test the parser with `test.ts` to ensure it produces an AST without errors.
 
 ---
 
@@ -29,20 +29,21 @@ Before the `arc` compiler begins its work, it should first invoke the standard T
 
 *Goal: Traverse the AST to extract both decorator metadata and the full implementation source code.*
 
--   [ ] **Define Data Structures**:
-    -   [ ] Create Rust structs (`ToolManifest`, `AgentManifest`, etc.) in a `src/compiler/schema.rs` module to hold extracted metadata.
-    -   [ ] Use `serde::Serialize` on these structs for future JSON conversion.
--   [ ] **Create AST Visitor (`ImplementationExtractor`)**:
-    -   [ ] Implement a struct that uses `swc`'s `Visit` trait.
-    -   [ ] Traverse the AST generated in Phase 1.
--   [ ] **Extract Decorator Metadata**:
-    -   [ ] Identify decorated `FnDecl` and `ClassDecl` nodes.
-    -   [ ] For each, find Aria decorators (e.g., `@tool`, `@agent`).
-    -   [ ] Parse the decorator's arguments (the `ObjectLit` in the AST).
-    -   [ ] Populate the custom Rust structs with the extracted metadata.
--   [ ] **Extract Implementation Code**:
-    -   [ ] When a decorated item is found, use its `span` (start/end position) to slice the original source code.
-    -   [ ] Store this verbatim source code string alongside its corresponding metadata struct.
+-   [✅] **Define Data Structures**:
+    -   [✅] Create Rust structs (`ToolManifest`, `AgentManifest`, etc.) in `src/compiler/schema.rs`.
+    -   [✅] Use `serde::Serialize` on these structs for JSON conversion.
+-   [✅] **Create AST Visitor (`AstVisitor`)**:
+    -   [✅] Implement a struct that uses `swc`'s `Visit` trait.
+    -   [✅] Traverse the AST generated in Phase 1.
+-   [✅] **Extract Decorator Metadata**:
+    -   [✅] Identify decorated `FnDecl` nodes for `@tool`s.
+    -   [✅] Identify decorated `ClassDecl` nodes for `@agent`s.
+    -   [✅] Parse the decorator's arguments (the `ObjectLit` in the AST).
+    -   [✅] Populate the `ToolManifest` struct with the extracted metadata.
+    -   [✅] Populate the `AgentManifest` struct with the extracted metadata.
+-   [✅] **Extract Implementation Code**:
+    -   [✅] When a decorated item is found, use its `span` to slice the original source code.
+    -   [✅] Store this verbatim source code string alongside its corresponding metadata struct.
 
 ---
 

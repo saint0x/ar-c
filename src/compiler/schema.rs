@@ -3,11 +3,11 @@
 //! These structs are serialized into the `manifest.json` file, which is the
 //! central contract between the compiler and the Aria Runtime.
 
-use serde::Serialize;
+use serde::{Serialize, Deserialize};
 use std::collections::HashMap;
 
 /// The root of the bundle manifest.
-#[derive(Debug, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AriaManifest {
     pub name: String,
     pub version: String,
@@ -16,7 +16,7 @@ pub struct AriaManifest {
 }
 
 /// Metadata for a decorated `@tool` function.
-#[derive(Debug, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ToolManifest {
     pub name: String,
     pub description: String,
@@ -24,7 +24,7 @@ pub struct ToolManifest {
 }
 
 /// Metadata for a decorated `@agent` class.
-#[derive(Debug, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AgentManifest {
     pub name: String,
     pub description: String,

@@ -4,12 +4,8 @@ pub mod upload;
 
 use anyhow::Result;
 use clap::{Parser, Subcommand};
-use std::sync::Arc;
-use swc_core::common::SourceMap;
-use swc_core::ecma::ast::{ModuleDecl, ModuleItem};
 
 use crate::compiler::AriaCompiler;
-use crate::compiler::typescript::TypeScriptCompiler;
 
 /// Common CLI utilities and shared functionality
 pub struct CliConfig {

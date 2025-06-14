@@ -9,7 +9,8 @@ use std::fs::File;
 use zip::write::{FileOptions};
 use zip::CompressionMethod;
 
-use crate::compiler::Implementation;
+use crate::compiler::{Implementation, ImplementationDetails};
+use crate::compiler::schema::{AriaManifest, AgentManifest};
 
 /// Aria bundle containing manifest and implementations
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -56,15 +57,12 @@ impl AriaBundle {
         
         // Add implementations
         for (name, implementation) in &self.implementations {
-            let file_path = match implementation.impl_type {
-                crate::compiler::ImplementationType::Function => {
+            let file_path = match &implementation.details {
+                ImplementationDetails::Tool(_) => {
                     format!("implementations/tools/{}.js", name)
                 }
-                crate::compiler::ImplementationType::Class => {
+                ImplementationDetails::Agent(_) => {
                     format!("implementations/agents/{}.js", name)
-                }
-                crate::compiler::ImplementationType::Team => {
-                    format!("implementations/teams/{}.js", name)
                 }
             };
             
@@ -183,15 +181,12 @@ impl AriaBundle {
         
         // Check for orphaned implementations
         for (name, implementation) in &self.implementations {
-            let found_in_manifest = match implementation.impl_type {
-                crate::compiler::ImplementationType::Function => {
+            let found_in_manifest = match implementation.details {
+                ImplementationDetails::Tool(_) => {
                     self.manifest.tools.iter().any(|t| &t.name == name)
                 }
-                crate::compiler::ImplementationType::Class => {
+                ImplementationDetails::Agent(_) => {
                     self.manifest.agents.iter().any(|a| &a.name == name)
-                }
-                crate::compiler::ImplementationType::Team => {
-                    self.manifest.teams.iter().any(|t| &t.name == name)
                 }
             };
             
@@ -206,60 +201,6 @@ impl AriaBundle {
     pub fn add_agent(&mut self, agent: AgentManifest) {
         self.manifest.agents.push(agent);
     }
-}
-
-/// Bundle manifest containing metadata about tools, agents, etc.
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct AriaManifest {
-    pub name: String,
-    pub version: String,
-    pub tools: Vec<ToolManifest>,
-    pub agents: Vec<AgentManifest>,
-    pub teams: Vec<TeamManifest>,
-    pub applications: Vec<ApplicationManifest>,
-    pub runtime_requirements: RuntimeRequirements,
-}
-
-/// Tool manifest entry
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ToolManifest {
-    pub name: String,
-    pub description: String,
-    pub inputs: HashMap<String, String>,
-    pub outputs: HashMap<String, String>,
-}
-
-/// Agent manifest entry
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct AgentManifest {
-    pub name: String,
-    pub description: String,
-    pub capabilities: Vec<String>,
-}
-
-/// Team manifest entry
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct TeamManifest {
-    pub name: String,
-    pub description: String,
-    pub agents: Vec<String>,
-    pub workflow: String,
-}
-
-/// Application manifest entry (for future DSL support)
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ApplicationManifest {
-    pub name: String,
-    pub description: String,
-    pub state: String,
-    pub scaling: String,
-}
-
-/// Runtime requirements
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct RuntimeRequirements {
-    pub bun_version: String,
-    pub node_version: Option<String>,
 }
 
 /// Bundle metadata
@@ -304,8 +245,8 @@ pub struct BundleStats {
     pub size_kb: f64,
     pub tools_count: usize,
     pub agents_count: usize,
-    pub teams_count: usize,
-    pub applications_count: usize,
+    // pub teams_count: usize,
+    // pub applications_count: usize,
     pub compression_ratio: f64,
 }
 
@@ -318,8 +259,8 @@ impl AriaBundle {
             size_kb: size as f64 / 1024.0,
             tools_count: self.manifest.tools.len(),
             agents_count: self.manifest.agents.len(),
-            teams_count: self.manifest.teams.len(),
-            applications_count: self.manifest.applications.len(),
+            // teams_count: self.manifest.teams.len(),
+            // applications_count: self.manifest.applications.len(),
             compression_ratio: 0.7, // TODO: Calculate actual compression ratio
         })
     }
