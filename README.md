@@ -1,0 +1,235 @@
+# Arc Compiler (ar-c)
+
+**Universal Agentic Platform Compiler** - Transforms TypeScript SDK and future Aria DSL into executable `.aria` bundles.
+
+> 🚧 **Development Status**: Phase 1 scaffolding complete. Core TypeScript compilation in progress.
+
+## Quick Start
+
+### Install & Build
+
+```bash
+# Clone and build
+git clone https://github.com/aria-dev/ar-c.git
+cd ar-c
+cargo build --release
+
+# Binary will be at: target/release/arc
+```
+
+### Usage
+
+```bash
+# Create new project
+./target/release/arc new my-project --template=basic
+cd my-project
+
+# Build TypeScript to .aria bundle (placeholder implementation)
+./target/release/arc build ./src --output dist/myproject.aria
+
+# Upload to runtime server
+./target/release/arc upload dist/myproject.aria --server https://aria-server.com --auth-token <token>
+```
+
+## Architecture
+
+The Arc compiler follows a modular, extensible architecture designed for multi-language support:
+
+```
+src/
+├── main.rs              # CLI entry point with clap integration
+├── cli/                 # Command implementations
+│   ├── mod.rs          # CLI utilities and formatting
+│   ├── new.rs          # Project scaffolding (COMPLETE)
+│   ├── build.rs        # Build command (PLACEHOLDER)
+│   └── upload.rs       # Bundle upload (COMPLETE)
+├── compiler/           # Core compilation engine
+│   ├── mod.rs          # Main compiler orchestration
+│   └── typescript/     # TypeScript-specific compiler (PLACEHOLDER)
+├── bundle/             # .aria bundle format handling
+│   └── mod.rs          # Bundle creation, loading, validation
+└── config/             # Configuration management
+    └── mod.rs          # aria.toml parsing and templates
+```
+
+## Current Implementation Status
+
+### ✅ Complete
+- **Project Scaffolding** (`arc new`): Full template generation for basic/sdk/advanced projects
+- **Bundle Upload** (`arc upload`): HTTP upload to runtime servers with auth
+- **Configuration System**: Complete aria.toml parsing and validation
+- **Bundle Format**: ZIP-based .aria bundle structure with manifest
+- **CLI Framework**: Professional command-line interface with proper error handling
+
+### 🚧 In Progress  
+- **TypeScript Compilation** (`arc build`): Currently placeholder implementation
+  - SWC integration for AST parsing
+  - Decorator extraction (@tool, @agent, @team)
+  - Implementation extraction with dependencies
+  - JavaScript code generation
+
+### 📋 Planned
+- **SWC Integration**: Replace regex-based parsing with proper AST
+- **Dependency Tracing**: Complete import resolution and bundling
+- **Watch Mode**: File watching for development workflow
+- **Performance Optimization**: Incremental compilation and caching
+- **Error Reporting**: Source-mapped error messages
+
+## Development
+
+### Project Templates
+
+The `arc new` command supports three templates:
+
+#### Basic Template
+```bash
+arc new myproject --template=basic
+```
+- Single `src/index.ts` with @tool example
+- Basic aria.toml configuration
+- Ready-to-build structure
+
+#### SDK Template  
+```bash
+arc new myproject --template=sdk
+```
+- Organized `src/tools/` and `src/agents/` directories
+- Multiple example implementations
+- Advanced project structure
+
+#### Advanced Template
+```bash
+arc new myproject --template=advanced
+```
+- Full SDK structure plus teams and workflows
+- Complex agent coordination examples
+- Production-ready organization
+
+### Configuration (aria.toml)
+
+```toml
+[project]
+name = "my-aria-app"
+version = "0.1.0"
+description = "An Aria agentic application"
+
+[build]
+target = "typescript"
+output = "dist/myapp.aria"
+source_dirs = ["src"]
+exclude = ["node_modules", "dist"]
+
+[runtime]
+bun_version = "latest"
+```
+
+### Bundle Structure
+
+Generated `.aria` bundles use ZIP format:
+
+```
+myapp.aria
+├── manifest.json              # Tool/agent metadata
+├── implementations/           # Executable JavaScript
+│   ├── tools/
+│   ├── agents/
+│   └── teams/
+├── package.json               # Runtime dependencies
+└── metadata/
+    └── build.json            # Build information
+```
+
+## Phase 1 Roadmap
+
+Following the [development plan](PLAN.md), we're implementing Phase 1 in 7 milestones:
+
+1. **Foundation** ✅ - CLI and project structure
+2. **TypeScript Parsing** 🚧 - SWC integration for decorator detection  
+3. **Implementation Extraction** 📋 - Complete code extraction with dependencies
+4. **Bundle Generation** 📋 - Full .aria bundle creation
+5. **Development Experience** 📋 - Watch mode and error reporting
+6. **Runtime Integration** 📋 - Bundle loading and hot reload
+7. **Polish & Documentation** 📋 - Performance optimization and docs
+
+## Testing
+
+```bash
+# Run all tests
+cargo test
+
+# Test CLI commands
+cargo test --test integration
+
+# Test specific modules
+cargo test compiler::tests
+```
+
+### Manual Testing
+
+```bash
+# Test project creation
+./target/release/arc new test-project
+cd test-project
+ls -la  # Should show: src/, aria.toml, package.json, etc.
+
+# Test build (currently placeholder)
+./target/release/arc build ./src
+# Expected: Placeholder compilation with mock output
+
+# Test upload (requires server)
+./target/release/arc upload dist/bundle.aria --server https://example.com
+```
+
+## Contributing
+
+### Adding New Commands
+
+1. Create command module in `src/cli/`
+2. Add command to `src/main.rs` 
+3. Implement async handler function
+4. Add tests in `tests/integration/`
+
+### Extending TypeScript Compiler
+
+The TypeScript compiler in `src/compiler/typescript/` currently uses placeholder regex parsing. To implement real SWC integration:
+
+1. Uncomment SWC dependencies in `Cargo.toml`
+2. Replace regex parsing with AST visitor pattern
+3. Implement proper decorator metadata extraction
+4. Add dependency tracing and scope analysis
+
+### Future DSL Support
+
+The architecture is designed for easy DSL integration:
+
+1. Create `src/compiler/dsl/` module
+2. Implement `LanguageCompiler` trait  
+3. Add DSL detection to `src/compiler/mod.rs`
+4. Extend bundle format for DSL-specific features
+
+## Performance
+
+### Build Performance Targets
+- Small projects (1-10 tools): <1s
+- Medium projects (10-100 tools): <5s
+- Large projects (100+ tools): <30s
+- Incremental builds: <2s
+
+### Binary Size
+- Release binary: <50MB (optimized with LTO)
+- Typical .aria bundle: <5MB
+
+## License
+
+MIT License - see [LICENSE](LICENSE) file.
+
+## Links
+
+- **Architecture Document**: [ARC.md](ARC.md) - Complete technical design
+- **Development Plan**: [PLAN.md](PLAN.md) - Detailed implementation roadmap  
+- **Runtime Integration**: Compatible with Aria Runtime Server
+- **TypeScript SDK**: Uses `@aria/sdk` decorators
+
+---
+
+**Next Steps**: Implement SWC integration for real TypeScript AST parsing in Milestone 2. 
