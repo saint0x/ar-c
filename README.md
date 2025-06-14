@@ -1,8 +1,24 @@
-# Arc Compiler (ar-c)
+# Aria Compiler (`ar-c`)
 
-**Universal Agentic Platform Compiler** - Transforms TypeScript SDK and future Aria DSL into executable `.aria` bundles.
+`ar-c` is the reference compiler for the Aria Agentic Runtime. It is a command-line tool that bundles TypeScript projects into a standardized `.aria` package.
 
-> 🚧 **Development Status**: Phase 1 scaffolding complete. Core TypeScript compilation in progress.
+## Core Functionality
+
+The compiler performs several key tasks:
+
+1.  **Parses TypeScript**: It uses SWC (`swc_core`) to parse TypeScript code, with specific support for decorators (`@tool`, `@agent`, etc.) used by the Aria SDK.
+2.  **Extracts Metadata**: It traverses the Abstract Syntax Tree (AST) to identify decorated entities and extracts their metadata (name, description, parameters) into a `manifest.json` file. This manifest is a critical component used by the Aria Runtime's `PlanningEngine` and `ReflectionEngine`.
+3.  **Transpiles to JavaScript**: The original TypeScript source for each decorated entity is transpiled into executable JavaScript.
+4.  **Packages the Bundle**: It assembles the `manifest.json` and all transpiled JavaScript implementations into a single, portable `.aria` file (which is a standard ZIP archive).
+
+This process creates a self-contained, deployable unit that the Aria Runtime can execute, allowing for a clean separation between the development environment and the execution environment.
+
+## Usage
+
+```bash
+# Build the project in the current directory
+arc build .
+```
 
 ## Quick Start
 
