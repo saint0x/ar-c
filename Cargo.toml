@@ -45,7 +45,7 @@ regex = "1.7"
 
 # Future: SWC integration (commented out for now)
 # swc = "0.258.26"
-swc_core = { version = "0.90.37", features = ["ecma_parser", "ecma_transforms", "ecma_transforms_typescript", "ecma_visit", "__common", "ecma_ast", "ecma_codegen"] }
+swc_core = { version = "0.90.37", features = ["ecma_parser", "ecma_transforms", "ecma_transforms_typescript", "ecma_transforms_proposal", "ecma_visit", "__common", "ecma_ast", "ecma_codegen"] }
 swc_ecma_ast = "0.112.8"
 swc_ecma_visit = "0.98.7"
 

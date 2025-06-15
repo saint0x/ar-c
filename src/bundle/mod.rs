@@ -17,12 +17,18 @@ use crate::compiler::schema::{AriaManifest, AgentManifest};
 pub struct AriaBundle {
     pub manifest: AriaManifest,
     pub implementations: HashMap<String, Implementation>,
+    #[serde(skip)]
+    pub compiled_code: HashMap<PathBuf, String>,
     pub metadata: BundleMetadata,
 }
 
 impl AriaBundle {
     /// Create a new bundle from manifest and implementations
-    pub fn create(manifest: AriaManifest, implementations: Vec<Implementation>) -> Result<Self> {
+    pub fn create(
+        manifest: AriaManifest,
+        implementations: Vec<Implementation>,
+        compiled_code: HashMap<PathBuf, String>,
+    ) -> Result<Self> {
         let mut impl_map = HashMap::new();
         
         for implementation in implementations {
@@ -32,6 +38,7 @@ impl AriaBundle {
         Ok(Self {
             manifest,
             implementations: impl_map,
+            compiled_code,
             metadata: BundleMetadata::new(),
         })
     }
@@ -55,19 +62,40 @@ impl AriaBundle {
         let manifest_json = serde_json::to_string_pretty(&self.manifest)?;
         zip.write_all(manifest_json.as_bytes())?;
         
-        // Add implementations
+        // --- Re-Export Strategy ---
+        // 1. Write all unique, transpiled source files to a `_sources` directory.
+        zip.add_directory("implementations/_sources", options)?;
+        let mut source_map: HashMap<PathBuf, String> = HashMap::new();
+        let mut i = 0;
+        for (original_path, code) in &self.compiled_code {
+            let source_bundle_path = format!("implementations/_sources/{}.js", i);
+            zip.start_file(&source_bundle_path, options)?;
+            zip.write_all(code.as_bytes())?;
+            source_map.insert(original_path.clone(), source_bundle_path);
+            i += 1;
+        }
+
+        // 2. Create re-export stubs for each implementation.
         for (name, implementation) in &self.implementations {
-            let file_path = match &implementation.details {
-                ImplementationDetails::Tool(_) => {
-                    format!("implementations/tools/{}.js", name)
-                }
-                ImplementationDetails::Agent(_) => {
-                    format!("implementations/agents/{}.js", name)
-                }
-            };
-            
-            zip.start_file(&file_path, options)?;
-            zip.write_all(implementation.executable_code.as_bytes())?;
+            if let Some(source_bundle_path) = source_map.get(&implementation.source_file_path) {
+                let (implementation_type_dir, relative_path) = match &implementation.details {
+                    ImplementationDetails::Tool(_) => ("tools", "../../_sources/"),
+                    ImplementationDetails::Agent(_) => ("agents", "../../_sources/"),
+                    ImplementationDetails::Team(_) => ("teams", "../../_sources/"),
+                    ImplementationDetails::Pipeline(_) => ("pipelines", "../../_sources/"),
+                };
+
+                let stub_path = format!("implementations/{}/{}.js", implementation_type_dir, name);
+                let source_file_name = Path::new(source_bundle_path)
+                    .file_name()
+                    .and_then(|n| n.to_str())
+                    .unwrap_or("");
+
+                let re_export_content = format!("export * from '{}{}';", relative_path, source_file_name);
+                
+                zip.start_file(&stub_path, options)?;
+                zip.write_all(re_export_content.as_bytes())?;
+            }
         }
         
         // Add package.json for dependencies
@@ -114,6 +142,7 @@ impl AriaBundle {
         Ok(Self {
             manifest,
             implementations,
+            compiled_code: HashMap::new(),
             metadata,
         })
     }

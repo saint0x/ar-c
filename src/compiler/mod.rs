@@ -9,7 +9,8 @@ use std::sync::Arc;
 use swc_core::common::{SourceMap, sync::Lrc};
 
 use self::typescript::TypeScriptCompiler;
-use crate::compiler::schema::{AgentManifest, ToolManifest, AriaManifest};
+use self::typescript::visitor::ExtractedItem;
+use crate::compiler::schema::{AgentManifest, ToolManifest, AriaManifest, TeamManifest, PipelineManifest};
 
 /// Main Aria compiler that orchestrates the compilation process
 pub struct AriaCompiler {
@@ -43,14 +44,14 @@ impl AriaCompiler {
         }
         
         // 2. Compile based on source language
-        let mut implementations = Vec::new();
+        let mut compiled_files: Vec<CompiledFile> = Vec::new();
         let mut warnings = Vec::new();
         
         for source in sources {
             match source.language {
                 SourceLanguage::TypeScript => {
                     match self.typescript_compiler.compile_file(&source).await {
-                        Ok(mut impls) => implementations.append(&mut impls),
+                        Ok(compiled) => compiled_files.push(compiled),
                         Err(e) => return Err(e),
                     }
                 }
@@ -62,23 +63,50 @@ impl AriaCompiler {
             }
         }
         
-        if implementations.is_empty() {
+        if compiled_files.iter().all(|f| f.items.is_empty()) {
             warnings.push("No decorated functions or classes found".to_string());
         }
         
-        // 3. Generate manifest
+        // 3. Process compiled files into implementations and a code map
+        let mut implementations = Vec::new();
+        let mut compiled_code_map: HashMap<PathBuf, String> = HashMap::new();
+
+        for file in compiled_files {
+            let source_path = file.source.path.clone();
+            compiled_code_map.insert(source_path.clone(), file.javascript_code);
+
+            for item in file.items {
+                let (name, details) = match item {
+                    ExtractedItem::Tool { manifest } => (manifest.name.clone(), ImplementationDetails::Tool(manifest)),
+                    ExtractedItem::Agent { manifest } => (manifest.name.clone(), ImplementationDetails::Agent(manifest)),
+                    ExtractedItem::Team { manifest } => (manifest.name.clone(), ImplementationDetails::Team(manifest)),
+                    ExtractedItem::Pipeline { manifest } => (manifest.name.clone(), ImplementationDetails::Pipeline(manifest)),
+                };
+                implementations.push(Implementation {
+                    name,
+                    details,
+                    source_file_path: source_path.clone(),
+                });
+            }
+        }
+        
+        // 4. Generate manifest
         let manifest = self.generate_manifest(&implementations)?;
         
-        // 4. Get metrics before moving implementations
-        let source_files_count = implementations.len();
+        // 5. Get metrics before moving implementations
+        let source_files_count = compiled_code_map.len();
         
-        // 5. Create bundle (this consumes implementations)
-        let bundle = crate::bundle::AriaBundle::create(manifest, implementations)?;
+        // 6. Create bundle (this consumes implementations)
+        let bundle = crate::bundle::AriaBundle::create(
+            manifest,
+            implementations,
+            compiled_code_map,
+        )?;
         
-        // 6. Write to output
+        // 7. Write to output
         bundle.save_to_file(output_path).await?;
         
-        // 7. Calculate metrics
+        // 8. Calculate metrics
         let compilation_time = start_time.elapsed();
         let bundle_size = tokio::fs::metadata(output_path).await?.len();
         
@@ -117,15 +145,15 @@ impl AriaCompiler {
     fn generate_manifest(&self, implementations: &[Implementation]) -> Result<AriaManifest> {
         let mut tools = Vec::new();
         let mut agents = Vec::new();
+        let mut teams = Vec::new();
+        let mut pipelines = Vec::new();
         
         for implementation in implementations {
             match &implementation.details {
-                ImplementationDetails::Tool(tool_manifest) => {
-                    tools.push(tool_manifest.clone());
-                }
-                ImplementationDetails::Agent(agent_manifest) => {
-                    agents.push(agent_manifest.clone());
-                }
+                ImplementationDetails::Tool(tool_manifest) => tools.push(tool_manifest.clone()),
+                ImplementationDetails::Agent(agent_manifest) => agents.push(agent_manifest.clone()),
+                ImplementationDetails::Team(team_manifest) => teams.push(team_manifest.clone()),
+                ImplementationDetails::Pipeline(pipeline_manifest) => pipelines.push(pipeline_manifest.clone()),
             }
         }
         
@@ -134,6 +162,8 @@ impl AriaCompiler {
             version: "0.1.0".to_string(),
             tools,
             agents,
+            teams,
+            pipelines,
         })
     }
 }
@@ -152,6 +182,15 @@ pub struct SourceFile {
     pub language: SourceLanguage,
 }
 
+/// A file that has been compiled, containing its original source,
+/// the resulting JavaScript, and the Aria items discovered within it.
+#[derive(Debug)]
+pub struct CompiledFile {
+    pub source: SourceFile,
+    pub javascript_code: String,
+    pub items: Vec<ExtractedItem>,
+}
+
 /// Supported source languages
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum SourceLanguage {
@@ -159,13 +198,12 @@ pub enum SourceLanguage {
     AriaSDL, // Future
 }
 
-/// Implementation extracted from source code
+/// Final, bundle-ready implementation data.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Implementation {
     pub name: String,
     pub details: ImplementationDetails,
-    pub source_code: String,
-    pub executable_code: String,
+    pub source_file_path: PathBuf,
 }
 
 /// Enum to hold manifest details for different implementation types.
@@ -173,6 +211,8 @@ pub struct Implementation {
 pub enum ImplementationDetails {
     Tool(ToolManifest),
     Agent(AgentManifest),
+    Team(TeamManifest),
+    Pipeline(PipelineManifest),
 }
 
 /// Type of implementation
@@ -228,11 +268,12 @@ fn discover_typescript_files(dir: &Path) -> std::pin::Pin<Box<dyn std::future::F
 
 /// Load a single source file
 async fn load_source_file(path: &Path) -> Result<SourceFile> {
-    let content = tokio::fs::read_to_string(path).await?;
-    let language = detect_language(path, &content);
+    let canonical_path = std::fs::canonicalize(path)?;
+    let content = tokio::fs::read_to_string(&canonical_path).await?;
+    let language = detect_language(&canonical_path, &content);
 
     Ok(SourceFile {
-        path: path.to_path_buf(),
+        path: canonical_path,
         content,
         language,
     })

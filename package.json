@@ -1,0 +1,26 @@
+{
+  "name": "ar-c",
+  "version": "1.0.0",
+  "description": "`ar-c` is the reference compiler for the Aria Agentic Runtime. It is a command-line tool that bundles TypeScript projects into a standardized `.aria` package.",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/saint0x/ar-c.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/saint0x/ar-c/issues"
+  },
+  "homepage": "https://github.com/saint0x/ar-c#readme",
+  "devDependencies": {
+    "typescript": "^5.8.3"
+  }
+}

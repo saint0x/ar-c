@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "target": "ES2022",
+    "target": "es2022",
     "module": "commonjs",
     "strict": true,
     "esModuleInterop": true,
@@ -8,5 +8,6 @@
     "forceConsistentCasingInFileNames": true,
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true
-  }
+  },
+  "include": ["**/*.ts", "declarations.d.ts"]
 } 

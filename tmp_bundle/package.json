@@ -1,0 +1,9 @@
+{
+  "name": "Generated Bundle",
+  "version": "0.1.0",
+  "description": "Aria bundle with 3 tools and 3 agents",
+  "main": "implementations/index.js",
+  "dependencies": {
+    "@aria/runtime": "^0.1.0"
+  }
+}

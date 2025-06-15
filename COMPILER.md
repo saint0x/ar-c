@@ -45,6 +45,7 @@ Before the `arc` compiler begins its work, it should first invoke the standard T
     -   [✅] When a decorated item is found, use its `span` to slice the original source code.
     -   [✅] Store this verbatim source code string alongside its corresponding metadata struct.
 
+
 ---
 
 ## Phase 2.5: Semantic Validation
@@ -68,13 +69,13 @@ This validation pass should be integrated into both the `arc check` and `arc bui
 
 *Goal: Transpile TypeScript to JavaScript and generate the `manifest.json`.*
 
--   [ ] **Transpile Implementations to JavaScript**:
-    -   [ ] For each extracted TypeScript implementation, use `swc`'s compiler to transpile it to executable JavaScript.
-    -   [ ] Store this as `executable_code` as described in `ARC.md`.
--   [ ] **Generate `manifest.json`**:
-    -   [ ] Create a unified `AriaManifest` struct that holds vectors of all extracted `ToolManifest`s, `AgentManifest`s, etc.
-    -   [ ] Populate this manifest from the data collected in Phase 2.
-    -   [ ] Serialize the `AriaManifest` struct into a JSON string using `serde_json`.
+-   [✅] **Transpile Implementations to JavaScript**:
+    -   [✅] For each extracted TypeScript implementation, use `swc`'s compiler to transpile it to executable JavaScript.
+    -   [✅] Store this as `executable_code` in the `Implementation` struct.
+-   [✅] **Generate `manifest.json`**:
+    -   [✅] Create a unified `AriaManifest` struct that holds vectors of all extracted `ToolManifest`s, `AgentManifest`s, etc.
+    -   [✅] Populate this manifest from the data collected in Phase 2.
+    -   [✅] Serialize the `AriaManifest` struct into a JSON string using `serde_json`.
 
 ---
 
@@ -82,10 +83,10 @@ This validation pass should be integrated into both the `arc check` and `arc bui
 
 *Goal: Assemble all generated assets into a final `.aria` (ZIP) file.*
 
--   [ ] **Setup Archiving**:
-    -   [ ] Add a ZIP-handling crate (e.g., `zip`) to `Cargo.toml`.
--   [ ] **Assemble Bundle**:
-    -   [ ] Create a new `.aria` archive file.
-    -   [ ] Add the `manifest.json` to the archive root.
-    -   [ ] Add the project's `package.json` to the archive root.
-    -   [ ] Add each piece of transpiled JavaScript (`executable_code`) to the `implementations/` directory, organized into subdirectories (`tools/`, `agents/`, `teams/`, `pipelines/`). 
+-   [✅] **Setup Archiving**:
+    -   [✅] Add a ZIP-handling crate (e.g., `zip`) to `Cargo.toml`.
+-   [✅] **Assemble Bundle**:
+    -   [✅] Create a new `.aria` archive file.
+    -   [✅] Add the `manifest.json` to the archive root.
+    -   [✅] Add the project's `package.json` to the archive root.
+    -   [✅] Add each piece of transpiled JavaScript (`executable_code`) to the `implementations/` directory, organized into subdirectories (`tools/`, `agents/`, `teams/`, `pipelines/`). 

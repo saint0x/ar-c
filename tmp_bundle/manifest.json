@@ -1,0 +1,45 @@
+{
+  "name": "Generated Bundle",
+  "version": "0.1.0",
+  "tools": [
+    {
+      "name": "getWeather",
+      "description": "Fetches the current weather for a given location.",
+      "inputs": {}
+    },
+    {
+      "name": "scheduleMeeting",
+      "description": "Schedules a meeting on the user's calendar.",
+      "inputs": {}
+    },
+    {
+      "name": "myTool",
+      "description": "A test tool",
+      "inputs": {}
+    }
+  ],
+  "agents": [
+    {
+      "name": "PlanningAgent",
+      "description": "An agent that can plan events by checking the weather and scheduling meetings.",
+      "tools": [
+        "getWeather",
+        "scheduleMeeting"
+      ]
+    },
+    {
+      "name": "ReminderAgent",
+      "description": "A simple agent that sets reminders by scheduling them on the calendar.",
+      "tools": [
+        "scheduleMeeting"
+      ]
+    },
+    {
+      "name": "myAgent",
+      "description": "A test agent that uses myTool.",
+      "tools": [
+        "myTool"
+      ]
+    }
+  ]
+}
