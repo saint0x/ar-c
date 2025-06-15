@@ -2,8 +2,6 @@
 // test3.ts - A performance and scale test for the Aria compiler.
 
 // --- Generated Tools ---
-@tool({ name: "generatedTool0", description: "A generated tool number 0"})
-export function generatedTool0(input: string): string { return "result " + input; }
 @tool({ name: "generatedTool1", description: "A generated tool number 1"})
 export function generatedTool1(input: string): string { return "result " + input; }
 @tool({ name: "generatedTool2", description: "A generated tool number 2"})
