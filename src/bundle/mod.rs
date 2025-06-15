@@ -210,12 +210,18 @@ impl AriaBundle {
         
         // Check for orphaned implementations
         for (name, implementation) in &self.implementations {
-            let found_in_manifest = match implementation.details {
+            let found_in_manifest = match &implementation.details {
                 ImplementationDetails::Tool(_) => {
                     self.manifest.tools.iter().any(|t| &t.name == name)
                 }
                 ImplementationDetails::Agent(_) => {
                     self.manifest.agents.iter().any(|a| &a.name == name)
+                }
+                ImplementationDetails::Team(_) => {
+                    self.manifest.teams.iter().any(|t| &t.name == name)
+                }
+                ImplementationDetails::Pipeline(_) => {
+                    self.manifest.pipelines.iter().any(|p| &p.name == name)
                 }
             };
             

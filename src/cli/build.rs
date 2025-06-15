@@ -109,8 +109,10 @@ async fn build_project(input_path: &str, output_path: &PathBuf, verbose: bool) -
             ));
             
             print_info(&format!("Bundle created: {}", output_path.display()));
-            print_info(&format!("Tools: {}", result.tools_count));
-            print_info(&format!("Agents: {}", result.agents_count));
+            print_info(&format!("  - Tools: {}", result.tools_count));
+            print_info(&format!("  - Agents: {}", result.agents_count));
+            print_info(&format!("  - Teams: {}", result.teams_count));
+            print_info(&format!("  - Pipelines: {}", result.pipelines_count));
             print_info(&format!("Bundle size: {:.2} KB", result.bundle_size_kb));
             
             if verbose {

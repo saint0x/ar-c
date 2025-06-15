@@ -114,6 +114,8 @@ impl AriaCompiler {
             bundle_size_kb: bundle_size as f64 / 1024.0,
             tools_count: bundle.manifest.tools.len(),
             agents_count: bundle.manifest.agents.len(),
+            teams_count: bundle.manifest.teams.len(),
+            pipelines_count: bundle.manifest.pipelines.len(),
             source_files_count,
             dependencies_count: 0, // TODO: Calculate actual dependencies
             compilation_time_secs: compilation_time.as_secs_f64(),
@@ -164,6 +166,80 @@ impl AriaCompiler {
             agents,
             teams,
             pipelines,
+        })
+    }
+
+    /// Run a compilation check without creating a bundle.
+    pub async fn check_project(
+        &self,
+        input_path: &str,
+        verbose: bool,
+    ) -> Result<CompilationResult> {
+        let start_time = std::time::Instant::now();
+        
+        // 1. Discover source files
+        let sources = self.discover_sources(input_path).await?;
+        
+        if verbose {
+            println!("Found {} source files", sources.len());
+        }
+        
+        // 2. Compile based on source language
+        let mut compiled_files: Vec<CompiledFile> = Vec::new();
+        let mut warnings = Vec::new();
+        
+        for source in sources {
+            match source.language {
+                SourceLanguage::TypeScript => {
+                    match self.typescript_compiler.compile_file(&source).await {
+                        Ok(compiled) => compiled_files.push(compiled),
+                        Err(e) => return Err(e),
+                    }
+                }
+                SourceLanguage::AriaSDL => {
+                    warnings.push(format!("Skipping DSL file (not yet implemented): {}", source.path.display()));
+                }
+            }
+        }
+        
+        if compiled_files.iter().all(|f| f.items.is_empty()) {
+            warnings.push("No decorated functions or classes found".to_string());
+        }
+        
+        // 3. Process compiled files into implementations
+        let mut implementations = Vec::new();
+        for file in &compiled_files {
+            for item in &file.items {
+                let (name, details) = match item {
+                    ExtractedItem::Tool { manifest } => (manifest.name.clone(), ImplementationDetails::Tool(manifest.clone())),
+                    ExtractedItem::Agent { manifest } => (manifest.name.clone(), ImplementationDetails::Agent(manifest.clone())),
+                    ExtractedItem::Team { manifest } => (manifest.name.clone(), ImplementationDetails::Team(manifest.clone())),
+                    ExtractedItem::Pipeline { manifest } => (manifest.name.clone(), ImplementationDetails::Pipeline(manifest.clone())),
+                };
+                implementations.push(Implementation {
+                    name,
+                    details,
+                    source_file_path: file.source.path.clone(),
+                });
+            }
+        }
+        
+        // 4. Generate manifest
+        let manifest = self.generate_manifest(&implementations)?;
+        
+        let compilation_time = start_time.elapsed();
+        
+        Ok(CompilationResult {
+            bundle_size_kb: 0.0, // Not applicable
+            tools_count: manifest.tools.len(),
+            agents_count: manifest.agents.len(),
+            teams_count: manifest.teams.len(),
+            pipelines_count: manifest.pipelines.len(),
+            source_files_count: compiled_files.len(),
+            dependencies_count: 0,
+            compilation_time_secs: compilation_time.as_secs_f64(),
+            compression_ratio: 0.0, // Not applicable
+            warnings,
         })
     }
 }
@@ -236,6 +312,8 @@ pub struct CompilationResult {
     pub bundle_size_kb: f64,
     pub tools_count: usize,
     pub agents_count: usize,
+    pub teams_count: usize,
+    pub pipelines_count: usize,
     pub source_files_count: usize,
     pub dependencies_count: usize,
     pub compilation_time_secs: f64,
